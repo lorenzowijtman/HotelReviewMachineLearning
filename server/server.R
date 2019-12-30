@@ -26,42 +26,57 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$citySelect, {
+    # place in paris has amsterdam in the street name, thus I search for country AND city
+    selectedCountry <- input$countrySelect
+    selectedCity <- input$citySelect
+
+    hotels <<- subset(dfAll, str_detect(Hotel_Address, as.character(selectedCountry)) & str_detect(Hotel_Address, as.character(selectedCity)),
+                     select = c(Hotel_Name, Hotel_Address, lat, lng, Average_Score, Reviewer_Nationality, Total_Number_of_Reviews))
+    
     zoom <- 10
     i <- 0
     for(i in 1:nrow(city_locations)) {
       if(city_locations$city[i] == input$citySelect) {
         lat <- city_locations$lat[i]
         long <- city_locations$long[i]
-        renderMap(lat, long, zoom, F)
-      }
+        renderMap(lat, long, zoom, unique(hotels$lat), unique(hotels$lng))
+      } 
     }
     
-    selectedCity <- input$citySelect
-
-    hotels <<- subset(dfAll, str_detect(Hotel_Address, as.character(selectedCity)), 
-                     select = c(Hotel_Name, Hotel_Address, lat, lng, Average_Score, Reviewer_Nationality, Total_Number_of_Reviews))
-      
+    hotelList <- c("All",sort(unique(hotels$Hotel_Name)))
     
-    updateSelectInput(session, "hotelSelect", label = "Select Hotel", choices = unique(hotels$Hotel_Name), selected = "")
+    updateSelectInput(session, "hotelSelect", label = "Select Hotel", choices = hotelList, selected = "")
+    
    
   }, ignoreInit = TRUE)
   
   observeEvent(input$hotelSelect, {
     selectedHotel <- input$hotelSelect
-    sub <- subset(hotels, Hotel_Name == as.character(selectedHotel), select = c(lat, lng)) %>%
-      unique()
-    
-    renderMap(sub$lat, sub$lng, 15, T)
+    if(selectedHotel == "All") {
+      for(i in 1:nrow(city_locations)) {
+        if(city_locations$city[i] == input$citySelect) {
+          lat <- city_locations$lat[i]
+          long <- city_locations$long[i]
+          renderMap(lat, long, 10, unique(hotels$lat), unique(hotels$lng))
+        } 
+      }
+    } else {
+      sub <- subset(hotels, Hotel_Name == as.character(selectedHotel), select = c(lat, lng)) %>%
+        unique()
+      
+      renderMap(sub$lat, sub$lng, 15, sub$lat, sub$lng)
+    }
     
   }, ignoreInit = TRUE)
   
-  renderMap <- function(lat, long, zoom, showCircles) {
-    if(showCircles) {
+  renderMap <- function(lat, long, zoom, latList, lngList) {
+    if(!is.null(latList) & !is.null(lngList)) {
+      print("not null")
       output$mymap <- renderLeaflet({
         leaflet(dfAll) %>%
           setView(lng=long, lat=lat, zoom=zoom) %>%
           addTiles()  %>%
-          addCircles(lat = lat, lng = long, weight = 5)
+          addMarkers(lat = latList, lng = lngList)
       })} else {
         output$mymap <- renderLeaflet({
           leaflet(dfAll) %>%
@@ -70,15 +85,4 @@ server <- function(input, output, session) {
         })
       }
   }
-  
-  fillTable <- function() {
-    output$Table <- renderDataTable(dfAll,
-                                    options = list(
-                                      pageLength = 5,
-                                      initComplete = I("function(settings, json) {alert('Done.');}")
-                                    )
-    )
-  }
-  
-  fillTable()
-  }
+}
