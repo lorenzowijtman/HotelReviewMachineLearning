@@ -1,6 +1,18 @@
 source("database/MongoDB.R")
 
 server <- function(input, output, session) {
+  
+  # city and country long and latitude, hardcoded because no other cities are present in the dataset
+  # hard coding can be avoided by selecting the first hotel in the list for the city and -
+  #  - zoom out since zoom in provided to the method that renders the map
+  
+  country_locations <- data.frame(country="France", lat=47.824905, long=2.618787) %>%
+    rbind(data.frame(country="United Kingdom", lat = 51.509865, long = -0.118092)) %>%
+    rbind(data.frame(country="Netherlands", lat=52.370216, long=4.895168)) %>%
+    rbind(data.frame(country="Barcelona", lat = 41.390205, long = 2.154007)) %>%
+    rbind(data.frame(country="Milan", lat = 45.464664, long = 9.188540)) %>%
+    rbind(data.frame(country="Vienna", lat = 	48.210033, long = 16.363449))
+  
   city_locations <- data.frame(city="Amsterdam", lat=52.370216, long=4.895168) %>%
     rbind(data.frame(city="London", lat = 51.509865, long = -0.118092)) %>%
     rbind(data.frame(city="Paris", lat = 48.864716, long = 2.349014)) %>%
@@ -12,6 +24,7 @@ server <- function(input, output, session) {
   updateSelectInput(session, "countrySelect", label = "Select Country", choices = comboDf$country, selected = "")
   updateSelectInput(session, "citySelect", label = "Select City", choices = comboDf$city, selected = "")
   
+  # observer for the selection of country in the menu, zooms in on teh specific country but doesnt load anything until city is selected
   observeEvent(input$countrySelect, {
     cities_in_country <- list()
     for(i in 1:nrow(comboDf)) {
@@ -33,7 +46,7 @@ server <- function(input, output, session) {
     hotels <<- subset(dfAll, str_detect(Hotel_Address, as.character(selectedCountry)) & str_detect(Hotel_Address, as.character(selectedCity)),
                      select = c(Hotel_Name, Hotel_Address, lat, lng, Average_Score, Reviewer_Nationality, Total_Number_of_Reviews))
     
-    zoom <- 10
+    zoom <- 12
     i <- 0
     for(i in 1:nrow(city_locations)) {
       if(city_locations$city[i] == input$citySelect) {
@@ -51,6 +64,7 @@ server <- function(input, output, session) {
    
   }, ignoreInit = TRUE)
   
+  # observer for when a hotel is selected, zooms in on the specific selected hotel and only shows that hotel with a marker
   observeEvent(input$hotelSelect, {
     selectedHotel <- input$hotelSelect
     if(selectedHotel == "All") {
@@ -69,16 +83,24 @@ server <- function(input, output, session) {
     
   }, ignoreInit = TRUE)
   
+  #observer for clicks on markers of the map, shows reviews for the specific hotels in the menu
+  observeEvent(input$mymap_marker_click, { 
+    p <- input$mymap_marker_click
+    print(p)
+  })
+  
+  
   renderMap <- function(lat, long, zoom, hotels) {
     if(!is.null(hotels)) {
       output$mymap <- renderLeaflet({
         leaflet(dfAll) %>%
           setView(lng=long, lat=lat, zoom=zoom) %>%
           addTiles()  %>%
-          addMarkers(lat = unique(hotels$lat), unique(hotels$lng), popup = paste("Name", unique(hotels$Hotel_Name), "<br>",
-                                                                                 "Address", unique(hotels$Hotel_Address), "<br>",
-                                                                                 "Average Score", unique(hotels$Average_Score), "<br>",
-                                                                                 "Amount of Reviews", unique(hotels$Total_Number_of_Reviews)))
+          addMarkers(lat = unique(hotels$lat), unique(hotels$lng), 
+                     popup = paste("Name", unique(hotels$Hotel_Name), "<br>",
+                                  "Address", unique(hotels$Hotel_Address), "<br>",
+                                  "Average Score", unique(hotels$Average_Score), "<br>",
+                                  "Amount of Reviews", unique(hotels$Total_Number_of_Reviews)))
       })} else {
         output$mymap <- renderLeaflet({
           leaflet(dfAll) %>%
@@ -87,9 +109,4 @@ server <- function(input, output, session) {
         })
       }
   }
-  
-  observeEvent(input$mymap_marker_click, { 
-    p <- input$mymap_marker_click
-    print(p)
-  })
 }
