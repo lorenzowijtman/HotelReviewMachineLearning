@@ -43,8 +43,8 @@ server <- function(input, output, session) {
     selectedCountry <- input$countrySelect
     selectedCity <- input$citySelect
 
-    hotels <<- subset(dfAll, str_detect(Hotel_Address, as.character(selectedCountry)) & str_detect(Hotel_Address, as.character(selectedCity)),
-                     select = c(Hotel_Name, Hotel_Address, lat, lng, Average_Score, Reviewer_Nationality, Total_Number_of_Reviews))
+    hotels <<- getHotels(selectedCountry, selectedCity)
+    head(hotels)
     
     zoom <- 12
     i <- 0
@@ -93,7 +93,7 @@ server <- function(input, output, session) {
   renderMap <- function(lat, long, zoom, hotels) {
     if(!is.null(hotels)) {
       output$mymap <- renderLeaflet({
-        leaflet(dfAll) %>%
+        leaflet() %>%
           setView(lng=long, lat=lat, zoom=zoom) %>%
           addTiles()  %>%
           addMarkers(lat = unique(hotels$lat), unique(hotels$lng), 
@@ -103,10 +103,13 @@ server <- function(input, output, session) {
                                   "Amount of Reviews", unique(hotels$Total_Number_of_Reviews)))
       })} else {
         output$mymap <- renderLeaflet({
-          leaflet(dfAll) %>%
+          leaflet() %>%
             setView(lng=long, lat=lat, zoom=zoom) %>%
             addTiles()
         })
       }
   }
+  
+  # Render the map when the application starts
+  renderMap(48.864716, 2.349014, 5, NULL)
 }

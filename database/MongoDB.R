@@ -7,6 +7,8 @@ dfAddress <- mcon$aggregate('[{"$group":{"_id":null, "addresses": {"$addToSet":"
 addresses <- dfAddress$addresses[[1]]
 
 # Find_specific_date <-mcone$find('{"Review_Date":{"$eq":"4/5/2017"}}')
+
+# pre define function that checks if one object is not found within another
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
 comboDf <- data.frame(matrix(ncol = 2, nrow = 0))
@@ -34,8 +36,12 @@ for(string in (addresses)) {
 }
 
 
-# retireves the hotels that belong to the country AND city, both are checked in case of city names in address of other country 
-getHotels <- function(Country,City) {
-  q <- '{"Hotel_Address": { "$regex": "^(?=.*Netherlands)(?=.*Amsterdam).*", "$options" : "i"}}'
+# retireves the full data of hotels that belong to the country AND city, both are checked in case of city names in address of other country 
+getHotels <- function(CountryIn,CityIn) {
+  q <- paste('{"Hotel_Address": { "$regex": "^(?=.*',CountryIn,')(?=.*',CityIn,').*", "$options" : "i"}}', sep = "")
   return (mcon$find(q))
+}
+
+getAllData <- function() {
+  return(mcon$find('{}'))
 }
