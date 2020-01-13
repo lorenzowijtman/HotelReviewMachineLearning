@@ -23,19 +23,42 @@ ui <- navbarPage("Data Science 2", id="nav",
                                             
                                             selectInput("countrySelect", "Country", c("")),
                                             selectInput("citySelect", "City", c("")),
-                                            selectInput("hotelSelect", "Hotel", c("")),
-                                            # conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
-                                            #                  # Only prompt for threshold when coloring or sizing by superzip
-                                            #                  numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
-                                            # ),
-                                            
-                                            plotOutput("histCentile", height = 200),
-                                            plotOutput("scatterCollegeIncome", height = 250)
+                                            selectInput("hotelSelect", "Hotel", c(""))
+                               
                               )
                           )
                  ),
                  
-                 tabPanel("Algorithms",),
+                 tabPanel("Algorithms",
+                          div(class="outer",
+                              
+                              tags$head(
+                                # Include our custom CSS
+                                includeCSS("ui/styles.css")
+                              ),
+                              
+                              mainPanel(
+                                fluidRow(
+                                  h3("Naive Bayes"),
+                                  numericInput("NBAmount", "Amount of reviews to use (total)", min = 1, max = 551000, value = 10000),
+                                  sliderInput("maxRevNeg", "maximum reviewer score for negative reviews", min = 1, max = 8, value = 8),
+                                  sliderInput("minRevPos", "minimum reviewer score for positive reviews", min = 8, max = 10, value = 9),
+                                ),
+                                fluidRow(
+                                  actionButton("trainBtn", "Train model"),
+                                  textOutput("status")
+                                ),
+                                fluidRow(
+                                  textAreaInput("writtenRev", "Write your own review"),
+                                  actionButton("selfRevBtn", "Test with review")
+                                )
+                                
+                              )
+                              
+                              
+                              
+                          )
+                          ),
                  
                  conditionalPanel("false", icon("crosshair"))
 )

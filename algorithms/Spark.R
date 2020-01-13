@@ -34,7 +34,7 @@ rm(neg)
 rm(df)
 
 
-# transform our data set, and then partition into 'training', 'test'
+# transform the data set, and then partition into 'training', 'test'
 partitions <- reviews_tbl %>%
   sdf_random_split(training = 0.7, test = 0.3, seed = 1011)
 
@@ -246,9 +246,6 @@ sparkNbTesting(8, 8, 10000) # "accuracy: 94.51%"
 sparkNbTesting(7, 8, 10000) # "accuracy: 94.43%"
 sparkNbTesting(6, 8, 10000) # "accuracy: 94.43%"
 sparkNbTesting(5, 8, 10000) # same, i will have to change the function as right now it's getting the same data
-sparkNbTesting(4, 8, 10000) # 
-sparkNbTesting(3, 8, 10000) # 
-sparkNbTesting(2, 8, 10000) # 
 
 # try again but with new query for positive reviews, change is documented in NBTests.R
 sparkNbTesting2(8, 8, 10000) # "accuracy: 92.41%"  ==============!!!!!Lowest achieved!!!!!============

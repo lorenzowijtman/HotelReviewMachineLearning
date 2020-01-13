@@ -1,6 +1,12 @@
 source("database/MongoDB.R")
+# source("algorithms/NBTests.R")
 
 server <- function(input, output, session) {
+  
+  # disable some filters
+  # disable(input$citySelect)
+  # disable(input$hotelSelect)
+  # disable(input$scoreSelect)
   
   # city and country long and latitude, hardcoded because no other cities are present in the dataset
   # hard coding can be avoided by selecting the first hotel in the list for the city and -
@@ -34,6 +40,7 @@ server <- function(input, output, session) {
       }
     }
     updateSelectInput(session, "citySelect", label = "Select City", choices = cities_in_country , selected = "")
+    enable(input$citySelect)
   }, ignoreInit = TRUE)
   
   
@@ -60,7 +67,8 @@ server <- function(input, output, session) {
     hotelList <- c("All",sort(unique(hotels$Hotel_Name)))
     
     updateSelectInput(session, "hotelSelect", label = "Select Hotel", choices = hotelList, selected = "")
-    
+    # enable(input$hotelSelect)
+    # enable(input$scoreSelect)
    
   }, ignoreInit = TRUE)
   
@@ -83,11 +91,20 @@ server <- function(input, output, session) {
     
   }, ignoreInit = TRUE)
   
+  # subset when the user selects a average score
+  observeEvent(input$scoreSelect, {
+    min <- input$scoreSelect[1]
+    max <- input$scoreSelect[2]
+    sub <- subset(hotels, Average_Score > min & Average_Score < max)
+    print('pls dont break')
+    renderMap(lat, long, 10, sub)
+  }, ignoreInit = T)
+  
   #observer for clicks on markers of the map, shows reviews for the specific hotels in the menu
   observeEvent(input$mymap_marker_click, { 
     p <- input$mymap_marker_click
     print(p)
-  })
+  }, ignoreInit = T)
   
   
   renderMap <- function(lat, long, zoom, hotels) {
@@ -112,4 +129,15 @@ server <- function(input, output, session) {
   
   # Render the map when the application starts
   renderMap(48.864716, 2.349014, 5, NULL)
+  
+  
+  observeEvent(input$trainBtn, {
+      print('clicked')
+      output$status <- "Model being trained"
+      neg <- input$maxRevNeg
+      pos <- input$minRevPos
+      amount <- input$NBAmount
+      trainNB(pos, neg, amount)
+      output$status <- "Model Trained"
+    })
 }

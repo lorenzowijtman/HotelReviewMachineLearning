@@ -37,7 +37,7 @@ for(string in (addresses)) {
 
 
 # retireves the full data of hotels that belong to the country AND city, both are checked in case of city names in address of other country 
-getHotels <- function(CountryIn,CityIn) {
+getHotels <- function(CountryIn, CityIn) {
   q <- paste('{"Hotel_Address": { "$regex": "^(?=.*',CountryIn,')(?=.*',CityIn,').*", "$options" : "i"}}', sep = "")
   return (mcon$find(q))
 }
