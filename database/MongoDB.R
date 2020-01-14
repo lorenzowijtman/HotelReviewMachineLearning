@@ -1,4 +1,4 @@
-mcon <- mongo(collection="Hotel_Reviews_Collection", db="Rstudio", url="mongodb://localhost:27017")
+mcon <<- mongo(collection="Hotel_Reviews_Collection", db="Rstudio", url="mongodb://localhost:27017")
 
 # aggregation to get the adresses of the hotels from the dataset, already unique values
 dfAddress <- mcon$aggregate('[{"$group":{"_id":null, "addresses": {"$addToSet":"$Hotel_Address"}}}]')

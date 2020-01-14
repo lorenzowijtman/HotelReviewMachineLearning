@@ -5,4 +5,7 @@ library(leaflet.extras)
 library(mongolite)
 library(stringr)
 library(shinyjs)
+library(sparklyr)
+library(DBI)
+Sys.setenv(JAVA_HOME = "C:/Program Files/Java/jdk1.8.0_191")
 

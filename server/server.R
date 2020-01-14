@@ -1,5 +1,5 @@
 source("database/MongoDB.R")
-# source("algorithms/NBTests.R")
+source("algorithms/NBTests.R")
 
 server <- function(input, output, session) {
   
@@ -133,11 +133,30 @@ server <- function(input, output, session) {
   
   observeEvent(input$trainBtn, {
       print('clicked')
-      output$status <- "Model being trained"
+      output$status <- renderText({"Model being trained"})
       neg <- input$maxRevNeg
       pos <- input$minRevPos
       amount <- input$NBAmount
       trainNB(pos, neg, amount)
-      output$status <- "Model Trained"
+      output$status <- renderText({"Model Trained"})
     })
+  
+  observeEvent(input$testBtn, {
+    pred <- testNBWithData() 
+    predTbl <- pred %>%
+      group_by(sentiment, prediction) %>%
+      tally()
+    output$testOut <- renderTable({predTbl})
+    
+    accuracy <- ml_multiclass_classification_evaluator(pred) *100
+    accString <- paste0("accuracy: ", round(accuracy, 2), "%")
+    
+    output$testAccuracy <- renderText({accString})
+  })
+  
+  observeEvent(input$selfRevBtn, {
+    review <- input$writtenRev
+    sentiment <- testNBWithOwnReview(review)
+    output$selfSentiment <- renderText({sentiment})
+  })
 }

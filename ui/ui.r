@@ -30,7 +30,7 @@ ui <- navbarPage("Data Science 2", id="nav",
                  ),
                  
                  tabPanel("Algorithms",
-                          div(class="outer",
+                          div(class="algorithmsOuter",
                               
                               tags$head(
                                 # Include our custom CSS
@@ -46,11 +46,15 @@ ui <- navbarPage("Data Science 2", id="nav",
                                 ),
                                 fluidRow(
                                   actionButton("trainBtn", "Train model"),
-                                  textOutput("status")
+                                  textOutput("status"),
+                                  actionButton("testBtn", "Test model"),
+                                  tableOutput("testOut"),
+                                  textOutput("testAccuracy")
                                 ),
                                 fluidRow(
                                   textAreaInput("writtenRev", "Write your own review"),
-                                  actionButton("selfRevBtn", "Test with review")
+                                  actionButton("selfRevBtn", "Test with review"),
+                                  textOutput("selfSentiment")
                                 )
                                 
                               )

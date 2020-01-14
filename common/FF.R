@@ -29,9 +29,6 @@ neg_sub.ff <- hotels.ff$Negative_Review
 format(object.size(hotel_data$Negative_Review),"Mb")
 format(object.size(hotels.ff$Negative_Review),"Mb")
 
-
-
-
 write.csv.ffdf(pos_sub.ff, "Review_pos.csv")
 write.csv.ffdf(neg_sub.ff, "Review_neg.csv")
 
