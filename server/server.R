@@ -3,11 +3,6 @@ source("algorithms/NBTests.R")
 
 server <- function(input, output, session) {
   
-  # disable some filters
-  # disable(input$citySelect)
-  # disable(input$hotelSelect)
-  # disable(input$scoreSelect)
-  
   # city and country long and latitude, hardcoded because no other cities are present in the dataset
   # hard coding can be avoided by selecting the first hotel in the list for the city and -
   #  - zoom out since zoom in provided to the method that renders the map
@@ -67,8 +62,6 @@ server <- function(input, output, session) {
     hotelList <- c("All",sort(unique(hotels$Hotel_Name)))
     
     updateSelectInput(session, "hotelSelect", label = "Select Hotel", choices = hotelList, selected = "")
-    # enable(input$hotelSelect)
-    # enable(input$scoreSelect)
    
   }, ignoreInit = TRUE)
   
@@ -90,15 +83,6 @@ server <- function(input, output, session) {
     }
     
   }, ignoreInit = TRUE)
-  
-  # subset when the user selects a average score
-  observeEvent(input$scoreSelect, {
-    min <- input$scoreSelect[1]
-    max <- input$scoreSelect[2]
-    sub <- subset(hotels, Average_Score > min & Average_Score < max)
-    print('pls dont break')
-    renderMap(lat, long, 10, sub)
-  }, ignoreInit = T)
   
   #observer for clicks on markers of the map, shows reviews for the specific hotels in the menu
   observeEvent(input$mymap_marker_click, { 
@@ -131,8 +115,8 @@ server <- function(input, output, session) {
   renderMap(48.864716, 2.349014, 5, NULL)
   
   
+  # observers for algorithms page
   observeEvent(input$trainBtn, {
-      print('clicked')
       output$status <- renderText({"Model being trained"})
       neg <- input$maxRevNeg
       pos <- input$minRevPos
@@ -157,7 +141,7 @@ server <- function(input, output, session) {
   observeEvent(input$selfRevBtn, {
     review <- input$writtenRev
     sentiment <- testNBWithOwnReview(review)
-    output$selfSentiment <- renderText({sentiment})
+    output$selfSentiment <- renderText({paste0("Sentiment of review: ",sentiment)})
   })
   
   

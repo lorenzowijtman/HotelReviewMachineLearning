@@ -1,14 +1,6 @@
 # connect to spark
 sc <<- spark_connect(master = "local", version="2.0.0")
 
-toggleSpark <- function() {
-  if(exists("sc") && spark_connection_is_open(sc)) {
-    spark_disconnect(sc)
-  } else {
-    sc <<- spark_connect(master = "local", version="2.0.0")
-  }
-}
-
 trainNB <- function(posScore, negScore, limit) {
   limit <- (limit/2)
   posQ <- paste0('{"sentiment": 1, "Reviewer_Score": {"$lt" : ',posScore,'}}')
@@ -22,7 +14,7 @@ trainNB <- function(posScore, negScore, limit) {
   print(nrow(pos))
   print(nrow(neg))
   df <- rbind(pos, neg)
-  reviews_tbl <<- copy_to(sc, df, name = "reviews_tbl", overwrite = T)
+  copy_to(sc, df, name = "reviews_tbl", overwrite = T)
   rm(pos)
   rm(neg)
   rm(df)
@@ -47,28 +39,14 @@ trainNB <- function(posScore, negScore, limit) {
 
 testNBWithData <- function() {
   
-  pipeline <- ml_pipeline(sc) %>%
-    ft_tokenizer(input_col = "review", output_col = "raw_tokens") %>%
-    ft_stop_words_remover(input_col = "raw_tokens", output_col = "tokens") %>%
-    ft_count_vectorizer("tokens", "vectokens") %>%
-    ft_r_formula(sentiment ~ vectokens) %>%
-    ml_naive_bayes()
-  
-  fitted_pipeline <- ml_fit(
-    pipeline,
-    reviews_tbl
-  )
-  
   predictions <- ml_transform(
     fitted_pipeline,
     partitions$test
   )
+  
   table <- predictions %>%
     group_by(sentiment, prediction) %>%
     tally()
-  accuracy <- ml_multiclass_classification_evaluator(predictions) *100
-  print(paste0("accuracy: ", round(accuracy, 2), "%"))
-  print(table)
   
   return(predictions)
 }
@@ -83,9 +61,8 @@ testNBWithOwnReview <- function(review) {
   prediction <- ml_predict(fitted_pipeline, my_tbl)
   prediction <- as.data.frame(prediction)
   
-  print(prediction)
-  
   sentiment <- "Positive"
+  
   if(prediction$prediction == 0) {
     sentiment <- "Negative"
   }

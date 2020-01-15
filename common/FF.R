@@ -15,26 +15,26 @@ format(object.size(hotel_data),"Mb")
 
 # all character columns to factor, ff doesn't like char values
 hotel_data <- mutate_if(hotel_data, is.character, as.factor)
-str(hotel_data)
+hotel_data <- subset(hotel_data, Positive_Review != "No Positive")
+hotel_data <- subset(hotel_data, Negative_Review != "No Negative")
+hotel_data <- subset(hotel_data, Negative_Review != "Nothing")
 
-hotels.ff <- as.ffdf(hotel_data)
 
-format(object.size(hotel_data),"Mb")
-format(object.size(hotels.ff),"Mb")
+hotel_pos <- hotel_data[,c("Positive_Review", "Reviewer_Score")]
+colnames(hotel_pos) <- c("Review", "Reviewer_Score")
+hotel_pos$sentiment <- 1
 
-pos_sub.ff <- hotels.ff$Positive_Review
-  
-neg_sub.ff <- hotels.ff$Negative_Review
+hotel_neg <- hotel_data[,c("Negative_Review", "Reviewer_Score")]
+colnames(hotel_neg) <- c("Review", "Reviewer_Score")
+hotel_neg$sentiment <- 0
 
-format(object.size(hotel_data$Negative_Review),"Mb")
-format(object.size(hotels.ff$Negative_Review),"Mb")
+hotels_pos.ff <- as.ffdf(hotel_pos)
+hotels_neg.ff <- as.ffdf(hotel_neg)
 
-write.csv.ffdf(pos_sub.ff, "Review_pos.csv")
-write.csv.ffdf(neg_sub.ff, "Review_neg.csv")
+format(object.size(hotels_pos.ff),"Mb")
+format(object.size(hotels_neg.ff),"Mb")
+format(object.size(hotel_pos),"Mb")
+format(object.size(hotel_neg),"Mb")
 
-# remove all data
-rm(hotels.ff)
-rm(pos_sub.ff)
-rm(neg_sub.ff)
-rm(hotel_data)
-rm(dir_common)
+write.csv.ffdf(hotels_pos.ff, "Review_pos.csv")
+write.csv.ffdf(hotels_neg.ff, "Review_neg.csv")

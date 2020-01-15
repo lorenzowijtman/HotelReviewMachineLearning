@@ -1,10 +1,4 @@
-
-Sys.setenv(JAVA_HOME = "C:/Program Files/Java/jdk1.8.0_191")
-library(sparklyr)
-library(dplyr)
-library(ggplot2)
-library(DBI)
-library(mongolite)
+source("common/libs.R")
 
 # connect to spark
 sc <- spark_connect(master = "local", version="2.0.0")
@@ -12,201 +6,49 @@ sc <- spark_connect(master = "local", version="2.0.0")
 # connect to mongo
 mcon <- mongo(collection="Hotel_Reviews_Collection", db="Rstudio", url="mongodb://localhost:27017")
 
-# get positive reviews with a reviewer score higher than 9
-pos <- mcon$find('{"sentiment": 1, "Reviewer_Score": {"$gt" : 9}}', fields = '{"Positive_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = 10000) 
-pos$`_id` <- NULL
-colnames(pos) <- c('review', 'score', 'sentiment')
-
-# get negative reviews with a reviewer score lower than 4
-neg <- mcon$find('{"sentiment": 0, "Reviewer_Score": {"$lt" : 4}}', fields = '{"Negative_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = 10000)
-neg$`_id` <- NULL
-colnames(neg) <- c('review', 'score', 'sentiment')
-
-# combine the two dataframes
-df <- rbind(pos, neg)
-
-# bring R datafrma to Spark
-reviews_tbl <- copy_to(sc, df, name = "reviews_tbl", overwrite = T)
-
-# remove dataframes, no longer need them
-rm(pos)
-rm(neg)
-rm(df)
-
-
-# transform the data set, and then partition into 'training', 'test'
-partitions <- reviews_tbl %>%
-  sdf_random_split(training = 0.7, test = 0.3, seed = 1011)
-
-src_tbls(sc)
-
-# create a sparkly pipeline that cleans the data
-pipeline <- ml_pipeline(sc) %>%
-  ft_tokenizer(input_col = "review", output_col = "raw_tokens") %>%
-  ft_stop_words_remover(input_col = "raw_tokens", output_col = "tokens") %>%
-  ft_count_vectorizer("tokens", "vectokens") %>%
-  ft_r_formula(sentiment ~ vectokens) %>%
-  ml_naive_bayes()
-
-# show steps in pipeline
-pipeline
-
-# train the model
-fitted_pipeline <- ml_fit(
-  pipeline,
-  partitions$training
-)
-
-# make predictions
-predictions <- ml_transform(
-  fitted_pipeline,
-  partitions$test
-)
-
-# show table of predictions
-predictions %>%
-  group_by(sentiment, prediction) %>%
-  tally()
-
-# format a bit to show accuracy in a print
-accuracy <- ml_multiclass_classification_evaluator(predictions) *100
-print(paste0("accuracy: ", round(accuracy, 2), "%"))  # result : "accuracy: 93.66%"
-
-
-
-
-
-# want to know if higher number of reviews increases accuracy ===================================
-# get positive reviews with a reviewer score higher than 9
-pos <- mcon$find('{"sentiment": 1, "Reviewer_Score": {"$gt" : 9}}', fields = '{"Positive_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = 15000) 
-pos$`_id` <- NULL
-colnames(pos) <- c('review', 'score', 'sentiment')
-
-# get negative reviews with a reviewer score lower than 4
-# there are not enough reviews with a score lower than 4? retrieves 10728 reviews...?
-# lets try 5
-neg <- mcon$find('{"sentiment": 0, "Reviewer_Score": {"$lt" : 5}}', fields = '{"Negative_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = 15000)
-neg$`_id` <- NULL
-colnames(neg) <- c('review', 'score', 'sentiment')
-
-# combine the two dataframes
-df <- rbind(pos, neg)
-
-# bring R datafrma to Spark
-reviews_tbl <- copy_to(sc, df, name = "reviews_tbl", overwrite = T)
-
-# remove dataframes, no longer need them
-rm(pos)
-rm(neg)
-rm(df)
-
-
-# transform our data set, and then partition into 'training', 'test'
-partitions <- reviews_tbl %>%
-  sdf_random_split(training = 0.7, test = 0.3, seed = 1011)
-
-src_tbls(sc)
-
-# create a sparkly pipeline that cleans the data
-pipeline <- ml_pipeline(sc) %>%
-  ft_tokenizer(input_col = "review", output_col = "raw_tokens") %>%
-  ft_stop_words_remover(input_col = "raw_tokens", output_col = "tokens") %>%
-  ft_count_vectorizer("tokens", "vectokens") %>%
-  ft_r_formula(sentiment ~ vectokens) %>%
-  ml_naive_bayes()
-
-# show steps in pipeline
-pipeline
-
-# train the model
-fitted_pipeline <- ml_fit(
-  pipeline,
-  partitions$training
-)
-
-# make predictions
-predictions <- ml_transform(
-  fitted_pipeline,
-  partitions$test
-)
-
-# show table of predictions
-predictions %>%
-  group_by(sentiment, prediction) %>%
-  tally()
-
-# format a bit to show accuracy in a print
-accuracy <- ml_multiclass_classification_evaluator(predictions) *100
-print(paste0("accuracy: ", round(accuracy, 2), "%")) # result : "accuracy: 93.9%"
-
-# Accuracy increased by 0.34% but is that because of the reviews fetched with score lower than 5 instead of 4 or is it the amount?
-
-# let's find out ===========================================================================
-
-# get positive reviews with a reviewer score higher than 9
-pos <- mcon$find('{"sentiment": 1, "Reviewer_Score": {"$gt" : 9}}', fields = '{"Positive_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = 10000) 
-pos$`_id` <- NULL
-colnames(pos) <- c('review', 'score', 'sentiment')
-
-# get negative reviews with a reviewer score lower than 4
-neg <- mcon$find('{"sentiment": 0, "Reviewer_Score": {"$lt" : 5}}', fields = '{"Negative_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = 10000)
-neg$`_id` <- NULL
-colnames(neg) <- c('review', 'score', 'sentiment')
-
-# combine the two dataframes
-df <- rbind(pos, neg)
-
-# bring R datafrma to Spark
-reviews_tbl <- copy_to(sc, df, name = "reviews_tbl", overwrite = T)
-
-# remove dataframes, no longer need them
-rm(pos)
-rm(neg)
-rm(df)
-
-
-# transform our data set, and then partition into 'training', 'test'
-partitions <- reviews_tbl %>%
-  sdf_random_split(training = 0.7, test = 0.3, seed = 1011)
-
-src_tbls(sc)
-
-# create a sparkly pipeline that cleans the data
-pipeline <- ml_pipeline(sc) %>%
-  ft_tokenizer(input_col = "review", output_col = "raw_tokens") %>%
-  ft_stop_words_remover(input_col = "raw_tokens", output_col = "tokens") %>%
-  ft_count_vectorizer("tokens", "vectokens") %>%
-  ft_r_formula(sentiment ~ vectokens) %>%
-  ml_naive_bayes()
-
-# show steps in pipeline
-pipeline
-
-# train the model
-fitted_pipeline <- ml_fit(
-  pipeline,
-  partitions$training
-)
-
-# make predictions
-predictions <- ml_transform(
-  fitted_pipeline,
-  partitions$test
-)
-
-# show table of predictions
-predictions %>%
-  group_by(sentiment, prediction) %>%
-  tally()
-
-# format a bit to show accuracy in a print
-accuracy <- ml_multiclass_classification_evaluator(predictions) *100
-print(paste0("accuracy: ", round(accuracy, 2), "%")) # Result : "accuracy: 94.61%"
-
 # accuracy increased which is not what I expected at all can i increase it further?
 # let's make the whole thing into a function with parameters for tuning so i can stop copy - pasting
-# want to change more so i will paste it in a seperate file to reduce the file size here --- this is after starting to play with @pos
-source('algorithms/NBTests.R')
+
+# first test aimed at increasing the negative reviews score, for increasing positive i need a new query
+sparkNbTesting <- function(posScore, negScore, limit) {
+  posQ <- paste0('{"sentiment": 1, "Reviewer_Score": {"$gt" : ',posScore,'}}')
+  negQ <- paste0('{"sentiment": 0, "Reviewer_Score": {"$lt" : ',negScore,'}}')
+  pos <- mcon$find(posQ, fields = '{"Positive_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = limit) 
+  pos$`_id` <- NULL
+  colnames(pos) <- c('review', 'score', 'sentiment')
+  neg <- mcon$find(negQ, fields = '{"Negative_Review": true, "Reviewer_Score": true, "sentiment": true}', limit = limit)
+  neg$`_id` <- NULL
+  colnames(neg) <- c('review', 'score', 'sentiment')
+  print(nrow(pos))
+  print(nrow(neg))
+  df <- rbind(pos, neg)
+  reviews_tbl <- copy_to(sc, df, name = "reviews_tbl", overwrite = T)
+  rm(pos)
+  rm(neg)
+  rm(df)
+  partitions <- reviews_tbl %>%
+    sdf_random_split(training = 0.7, test = 0.3, seed = 1011)
+  pipeline <- ml_pipeline(sc) %>%
+    ft_tokenizer(input_col = "review", output_col = "raw_tokens") %>%
+    ft_stop_words_remover(input_col = "raw_tokens", output_col = "tokens") %>%
+    ft_count_vectorizer("tokens", "vectokens") %>%
+    ft_r_formula(sentiment ~ vectokens) %>%
+    ml_naive_bayes()
+  fitted_pipeline <- ml_fit(
+    pipeline,
+    partitions$training
+  )
+  predictions <- ml_transform(
+    fitted_pipeline,
+    partitions$test
+  )
+  table <- predictions %>%
+    group_by(sentiment, prediction) %>%
+    tally()
+  accuracy <- ml_multiclass_classification_evaluator(predictions) *100
+  print(paste0("accuracy: ", round(accuracy, 2), "%"))
+  print(table)
+}
 
 
 # now let's test some different parameters

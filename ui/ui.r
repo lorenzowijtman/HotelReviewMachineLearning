@@ -24,7 +24,6 @@ ui <- navbarPage("Data Science 2", id="nav",
                                             selectInput("countrySelect", "Country", c("")),
                                             selectInput("citySelect", "City", c("")),
                                             selectInput("hotelSelect", "Hotel", c(""))
-                               
                               )
                           )
                  ),
@@ -41,8 +40,8 @@ ui <- navbarPage("Data Science 2", id="nav",
                                 fluidRow(
                                   h3("Naive Bayes"),
                                   numericInput("NBAmount", "Amount of reviews to use (total)", min = 1, max = 551000, value = 10000),
-                                  sliderInput("maxRevNeg", "maximum reviewer score for negative reviews", min = 1, max = 8, value = 8),
-                                  sliderInput("minRevPos", "minimum reviewer score for positive reviews", min = 8, max = 10, value = 9),
+                                  sliderInput("maxRevNeg", "maximum reviewer score for negative reviews", min = 1, max = 8, value = 8, round = F),
+                                  sliderInput("minRevPos", "minimum reviewer score for positive reviews", min = 8, max = 10, value = 9, round = F, step = 0.1),
                                 ),
                                 fluidRow(
                                   actionButton("trainBtn", "Train model"),
@@ -58,9 +57,6 @@ ui <- navbarPage("Data Science 2", id="nav",
                                 )
                                 
                               )
-                              
-                              
-                              
                           )
                           ),
                  

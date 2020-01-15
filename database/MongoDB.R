@@ -6,8 +6,6 @@ dfAddress <- mcon$aggregate('[{"$group":{"_id":null, "addresses": {"$addToSet":"
 # select the addresses list
 addresses <- dfAddress$addresses[[1]]
 
-# Find_specific_date <-mcone$find('{"Review_Date":{"$eq":"4/5/2017"}}')
-
 # pre define function that checks if one object is not found within another
 '%!in%' <- function(x,y)!('%in%'(x,y))
 
